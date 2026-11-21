@@ -4,10 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import handler from "./api/generate.js";
+import gradeHandler from "./api/grade.js";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, "public");
-const MAX_BODY_BYTES = 10_000;
+const MAX_BODY_BYTES = 256_000;
+const API_ROUTES = { "/api/generate": handler, "/api/grade": gradeHandler };
 
 function loadEnvFile(file) {
   const fullPath = path.join(root, file);
@@ -26,7 +28,9 @@ const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".pdf": "application/pdf",
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".ico": "image/x-icon"
@@ -79,7 +83,8 @@ function serveStatic(req, res, pathname) {
 
 const server = http.createServer(async (req, res) => {
   const { pathname } = new URL(req.url, "http://localhost");
-  if (pathname !== "/api/generate") return serveStatic(req, res, pathname);
+  const apiHandler = Object.hasOwn(API_ROUTES, pathname) ? API_ROUTES[pathname] : null;
+  if (!apiHandler) return serveStatic(req, res, pathname);
 
   if (req.method === "POST") {
     try {
@@ -90,7 +95,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
   }
-  await handler(req, res);
+  await apiHandler(req, res);
 });
 
 const port = Number(process.env.PORT) || 3000;

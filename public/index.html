@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7f2">
-  <title>퀴즈 메이커 | 과목·단원별 문제 만들기</title>
+  <title>퀴즈 메이커 | 주제·PDF로 문제 만들고 풀기</title>
   <style>
     :root {
       --ink: #1c2924;
@@ -17,10 +17,12 @@
       --mint: #e9f4ec;
       --amber: #f5b94c;
       --red: #b2472f;
+      --red-soft: #fff1ed;
       --shadow: 0 16px 44px rgba(31, 52, 39, .07);
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       margin: 0;
@@ -31,8 +33,9 @@
       line-height: 1.55;
     }
 
-    button, input { font: inherit; }
+    button, input, textarea { font: inherit; }
     button { cursor: pointer; }
+    a { color: var(--green); }
 
     .topbar {
       display: flex;
@@ -43,34 +46,41 @@
       border-bottom: 1px solid rgba(31, 52, 39, .07);
       background: rgba(255, 255, 255, .8);
     }
-
     .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; letter-spacing: -.04em; }
     .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--green); color: #fff; }
     .top-note { color: var(--muted); font-size: 13px; }
 
-    main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 52px 0 80px; }
+    main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 48px 0 80px; }
 
-    .intro { margin-bottom: 30px; }
+    .intro { margin-bottom: 28px; }
     .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .08em; }
     .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); content: ""; }
     h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); letter-spacing: -.05em; line-height: 1.2; }
     .intro p { margin: 12px 0 0; color: var(--muted); font-size: 16px; }
 
-    .workspace { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
-
+    .workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 22px; align-items: start; }
     .panel { border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: var(--shadow); }
-    .form-panel { position: sticky; top: 20px; padding: 26px; }
+    .form-panel { padding: 24px; }
     h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
-    .subheading { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 
-    .field { margin-top: 20px; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #eef2ed; }
+    .tab {
+      height: 40px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #5d6a62;
+      font-size: 14px;
+      font-weight: 750;
+    }
+    .tab[aria-selected="true"] { background: #fff; color: var(--green-dark); box-shadow: 0 1px 4px rgba(31, 52, 39, .1); }
+
+    .field { margin-top: 18px; }
     .field-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 750; }
     .required { color: var(--red); }
 
-    input[type="text"], input[type="number"] {
+    input[type="text"], input[type="number"], textarea {
       width: 100%;
-      height: 46px;
-      padding: 0 13px;
       border: 1px solid #dde4dd;
       border-radius: 10px;
       outline: none;
@@ -78,55 +88,88 @@
       color: var(--ink);
       transition: border-color .15s, box-shadow .15s;
     }
-    input::placeholder { color: #a4ada6; }
-    input:focus-visible { border-color: #69a780; box-shadow: 0 0 0 3px rgba(39, 114, 76, .12); }
+    input[type="text"], input[type="number"] { height: 46px; padding: 0 13px; }
+    textarea { padding: 10px 12px; resize: vertical; }
+    input::placeholder, textarea::placeholder { color: #a4ada6; }
+    input:focus-visible, textarea:focus-visible { border-color: #69a780; box-shadow: 0 0 0 3px rgba(39, 114, 76, .12); }
     input[aria-invalid="true"] { border-color: #d98a76; }
+    button:focus-visible { outline: 3px solid rgba(39, 114, 76, .35); outline-offset: 2px; }
+
+    .dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 22px 16px;
+      border: 1.5px dashed #c9d5c9;
+      border-radius: 14px;
+      background: #fafcf9;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .dropzone strong { color: var(--ink); font-size: 14px; }
+    .dropzone.dragging, .dropzone:hover { border-color: #6ea983; background: #f3f9f4; }
+    .dropzone:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(39, 114, 76, .15); }
+    .dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .dropzone-icon { font-size: 26px; }
+
+    .sample-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 12px; }
+    .link-button { padding: 0; border: 0; background: none; color: var(--green); font-size: 13px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+
+    .file-card { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #d6e6d9; border-radius: 12px; background: #f3f9f4; }
+    .file-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #fff; color: var(--red); font-size: 11px; font-weight: 800; }
+    .file-meta { min-width: 0; flex: 1; }
+    .file-name { overflow: hidden; font-size: 14px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .file-pages { color: var(--muted); font-size: 12px; }
+
+    .range-row { display: flex; align-items: center; gap: 8px; }
+    .range-row input { width: 90px; text-align: center; font-weight: 700; }
+    .range-row span { color: var(--muted); font-size: 13px; }
+
+    .note { margin: 12px 0 0; padding: 9px 11px; border-radius: 9px; background: #f6f8f4; color: #6a766e; font-size: 12px; }
+    .hint { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .field-error { margin: 6px 0 0; color: var(--red); font-size: 12px; }
+    .field-info { margin: 8px 0 0; color: var(--green-dark); font-size: 12px; }
 
     fieldset { margin: 0; padding: 0; border: 0; }
-    .type-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .type-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .type-option {
       position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
+      gap: 3px;
+      padding: 11px 6px;
       border: 1px solid #e1e7e0;
       border-radius: 12px;
+      text-align: center;
       cursor: pointer;
       transition: border-color .15s, background .15s;
     }
     .type-option:has(input:checked) { border-color: #6ea983; background: #f3f9f4; }
     .type-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(39, 114, 76, .15); }
     .type-option input { position: absolute; opacity: 0; pointer-events: none; }
-    .type-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--mint); font-size: 17px; }
-    .type-option strong { display: block; font-size: 14px; }
-    .type-option small { display: block; color: var(--muted); font-size: 11px; }
+    .type-icon { font-size: 19px; }
+    .type-option strong { font-size: 14px; }
+    .type-option small { color: var(--muted); font-size: 11px; line-height: 1.3; }
 
     .count-row { display: flex; align-items: center; gap: 8px; }
-    .count-row input { width: 92px; text-align: center; font-weight: 700; }
+    .count-row input { width: 86px; text-align: center; font-weight: 700; }
     .count-presets { display: flex; flex-wrap: wrap; gap: 6px; }
-    .preset {
-      height: 32px;
-      padding: 0 11px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
-      color: #56635b;
-      font-size: 12px;
-      font-weight: 700;
-    }
+    .preset { height: 32px; padding: 0 11px; border: 1px solid var(--line); border-radius: 16px; background: #fff; color: #56635b; font-size: 12px; font-weight: 700; }
     .preset[aria-pressed="true"] { border-color: #6ea983; background: var(--mint); color: var(--green-dark); }
-    .hint { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
-    .field-error { margin: 6px 0 0; color: var(--red); font-size: 12px; }
 
-    .generate-button {
+    .primary-button {
       display: flex;
       width: 100%;
       height: 50px;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 24px;
+      margin-top: 22px;
       border: 0;
       border-radius: 11px;
       background: var(--green);
@@ -134,89 +177,118 @@
       font-weight: 800;
       transition: background .15s;
     }
-    .generate-button:hover { background: var(--green-dark); }
-    .generate-button:disabled { cursor: wait; opacity: .7; }
-
-    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
+    .primary-button:hover:not(:disabled) { background: var(--green-dark); }
+    .primary-button:disabled { cursor: wait; opacity: .7; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, .4); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .result-panel { min-height: 520px; overflow: hidden; }
-    .result-header {
-      display: flex;
-      flex-wrap: wrap;
-      min-height: 74px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 16px 22px;
-      border-bottom: 1px solid var(--line);
-    }
+    .result-header { padding: 16px 22px; border-bottom: 1px solid var(--line); }
     .result-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .result-title h2 { font-size: 16px; }
+    .result-title h2 { font-size: 16px; word-break: keep-all; }
     .badge { padding: 3px 9px; border-radius: 20px; background: #f0f3ef; color: #627068; font-size: 11px; font-weight: 700; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+    .segmented { display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: #eef2ed; }
+    .segmented button { height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #5d6a62; font-size: 12px; font-weight: 750; }
+    .segmented button[aria-pressed="true"] { background: #fff; color: var(--green-dark); box-shadow: 0 1px 4px rgba(31, 52, 39, .1); }
+    .segmented button:disabled { cursor: default; opacity: .5; }
     .result-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-    .small-button {
-      min-height: 34px;
-      padding: 0 11px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      color: #4f5d55;
-      font-size: 12px;
-      font-weight: 700;
-    }
+    .small-button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #4f5d55; font-size: 12px; font-weight: 700; }
     .small-button:hover:not(:disabled) { background: #f6f8f5; }
     .small-button:disabled { cursor: default; opacity: .4; }
 
-    .result-body { padding: 22px; }
-
-    .status { margin: 0 0 16px; padding: 11px 13px; border-radius: 9px; font-size: 13px; }
-    .status[hidden] { display: none; }
-    .status.error { background: #fff1ed; color: var(--red); }
+    .result-body { padding: 20px 22px 24px; }
+    .status { margin: 0 0 14px; padding: 11px 13px; border-radius: 9px; font-size: 13px; }
+    .status.error { background: var(--red-soft); color: var(--red); }
     .status.info { background: #eef6f0; color: var(--green-dark); }
 
     .empty-state { display: flex; min-height: 380px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
-    .empty-state[hidden] { display: none; }
     .empty-icon { display: grid; width: 72px; height: 72px; place-items: center; margin-bottom: 16px; border-radius: 22px; background: #eff5ed; font-size: 32px; }
     .empty-state h3 { margin: 0; font-size: 16px; }
-    .empty-state p { max-width: 300px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .empty-state p { max-width: 320px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 
     .skeleton { display: grid; gap: 12px; }
-    .skeleton[hidden] { display: none; }
     .skeleton div { height: 92px; border-radius: 12px; background: linear-gradient(90deg, #f1f4f0 25%, #f8faf7 50%, #f1f4f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
     @keyframes shimmer { to { background-position: -200% 0; } }
 
+    .score-card { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 14px; padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, #e9f4ec, #f6f9f2); }
+    .score-value { color: var(--green-dark); font-size: 30px; font-weight: 800; letter-spacing: -.04em; }
+    .score-text strong { display: block; font-size: 15px; }
+    .score-text span { color: var(--muted); font-size: 12px; }
+
     .result-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
     .item-card { padding: 17px 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .item-card.correct { border-color: #a9d3b5; }
+    .item-card.wrong { border-color: #ecb7a8; }
+    .item-card.error { border-color: #ecd49a; }
     .item-head { display: flex; gap: 10px; }
     .item-number { display: grid; width: 26px; height: 26px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--mint); color: var(--green); font-size: 12px; font-weight: 800; }
+    .item-card.wrong .item-number { background: var(--red-soft); color: var(--red); }
+    .item-card.error .item-number { background: #fdf4dc; color: #8a6514; }
     .item-question { margin: 1px 0 0; font-size: 15px; font-weight: 700; line-height: 1.55; white-space: pre-wrap; }
-    .choices { display: grid; gap: 5px; margin: 12px 0 0 36px; padding: 0; list-style: none; color: #47554c; font-size: 14px; }
-    .choices li { display: flex; gap: 7px; }
-    .choices li.correct { color: var(--green-dark); font-weight: 700; }
-    .choice-mark { flex: 0 0 auto; }
+    .kind-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; background: #f0f3ef; color: #627068; font-size: 11px; font-weight: 800; vertical-align: 2px; }
+    .item-body { margin: 12px 0 0 36px; }
 
-    details.answer { margin: 12px 0 0 36px; }
+    .choices { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; color: #47554c; font-size: 14px; }
+    .choices li { display: flex; gap: 7px; }
+    .revealed .choices li.is-answer { color: var(--green-dark); font-weight: 700; }
+    .ox-preview { display: flex; gap: 8px; }
+    .ox-chip { display: grid; width: 38px; height: 32px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: #56635b; font-weight: 800; }
+    .revealed .ox-chip.is-answer { border-color: #6ea983; background: var(--mint); color: var(--green-dark); }
+
+    details.answer { margin-top: 12px; }
     details.answer summary { width: fit-content; color: var(--green); font-size: 12px; font-weight: 800; cursor: pointer; }
     .answer-body { margin-top: 8px; padding: 10px 12px; border-radius: 9px; background: #f4f8f2; color: #355a43; font-size: 13px; }
     .answer-body p { margin: 0; white-space: pre-wrap; }
     .answer-body p + p { margin-top: 4px; }
 
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .solve-choices { display: grid; gap: 6px; }
+    .solve-choice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: #3f4d45;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .solve-choice:has(input:checked) { border-color: #6ea983; background: #f3f9f4; }
+    .solve-choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(39, 114, 76, .15); }
+    .solve-choice:has(input:disabled) { cursor: default; }
+    .solve-choice input { accent-color: var(--green); }
+    .item-card .solve-choice.is-correct { border-color: #6ea983; background: #edf7ef; color: var(--green-dark); font-weight: 700; }
+    .item-card .solve-choice.is-wrong { border-color: #e3a08d; background: var(--red-soft); color: var(--red); }
+    .solve-ox { display: flex; gap: 10px; }
+    .solve-ox .solve-choice { width: 84px; justify-content: center; font-size: 18px; font-weight: 800; }
+    .solve-ox .solve-choice input { position: absolute; opacity: 0; }
+    .solve-text { min-height: 64px; }
 
-    @media (max-width: 800px) {
+    .grade-box { margin-top: 12px; padding: 11px 13px; border-radius: 10px; background: #f6f8f5; color: #46534b; font-size: 13px; }
+    .grade-box p { margin: 0; white-space: pre-wrap; }
+    .grade-box p + p { margin-top: 4px; }
+    .grade-label { font-weight: 800; }
+    .correct .grade-label { color: var(--green-dark); }
+    .wrong .grade-label { color: var(--red); }
+    .error .grade-label { color: #8a6514; }
+
+    .solve-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+    .solve-footer .hint { margin: 0; }
+    .solve-footer .primary-button { width: auto; min-width: 140px; margin: 0; padding: 0 22px; }
+
+    @media (max-width: 820px) {
       .topbar { height: 60px; padding: 0 18px; }
       .top-note { display: none; }
-      main { width: min(100% - 32px, 600px); padding-top: 32px; }
+      main { width: min(100% - 32px, 620px); padding-top: 30px; }
       .workspace { grid-template-columns: 1fr; }
-      .form-panel { position: static; padding: 20px; }
-      .result-body { padding: 14px; }
-      .result-header { padding: 14px; }
-      .choices, details.answer { margin-left: 0; }
+      .form-panel { padding: 20px; }
+      .result-header, .result-body { padding-left: 14px; padding-right: 14px; }
+      .item-body { margin-left: 0; }
     }
 
     @media print {
-      .topbar, .intro, .form-panel, .result-actions, .status { display: none !important; }
+      .topbar, .intro, .form-panel, .toolbar, .status, .solve-footer { display: none !important; }
       main { width: 100%; padding: 0; }
       .workspace { display: block; }
       .panel { border: 0; box-shadow: none; }
@@ -227,30 +299,74 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark" aria-hidden="true">Q</span> 퀴즈 메이커</div>
-    <div class="top-note">과목·단원별 수업용 문제 만들기</div>
+    <div class="top-note">주제나 PDF로 문제 만들고, 바로 풀어보기</div>
   </header>
 
   <main>
     <section class="intro">
       <div class="eyebrow">QUIZ GENERATOR</div>
-      <h1>단원에 맞는 퀴즈를 바로 만들어보세요</h1>
-      <p>과목과 단원명을 입력하고 문제 유형과 문항 수를 고르면 AI가 문제를 출제해요.</p>
+      <h1>단원이나 교재 PDF로 퀴즈를 만들어보세요</h1>
+      <p>주제를 입력하거나 PDF의 쪽 범위를 고르면 AI가 문제를 내요. 만든 문제는 바로 풀고 채점받을 수 있어요.</p>
     </section>
 
     <div class="workspace">
       <section class="panel form-panel" aria-labelledby="form-title">
-        <h2 id="form-title">출제 조건</h2>
-        <p class="subheading">필요한 퀴즈의 조건을 입력해주세요.</p>
+        <h2 id="form-title" hidden>출제 조건</h2>
+        <div class="tabs" role="tablist" aria-label="출제 방식">
+          <button class="tab" id="tab-topic" type="button" role="tab" aria-selected="true" aria-controls="topic-fields" data-mode="topic">✏️ 주제로 만들기</button>
+          <button class="tab" id="tab-pdf" type="button" role="tab" aria-selected="false" aria-controls="pdf-fields" data-mode="pdf">📄 PDF로 만들기</button>
+        </div>
 
         <form id="quiz-form" novalidate>
-          <div class="field">
-            <label class="field-label" for="subject">과목 <span class="required" aria-hidden="true">*</span></label>
-            <input id="subject" name="subject" type="text" maxlength="50" placeholder="예: 과학" autocomplete="off" required>
+          <div id="topic-fields" role="tabpanel" aria-labelledby="tab-topic">
+            <div class="field">
+              <label class="field-label" for="subject">과목 <span class="required" aria-hidden="true">*</span></label>
+              <input id="subject" type="text" maxlength="50" placeholder="예: 과학" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field-label" for="unit">단원명 <span class="required" aria-hidden="true">*</span></label>
+              <input id="unit" type="text" maxlength="100" placeholder="예: 태양계와 별" autocomplete="off">
+            </div>
           </div>
 
-          <div class="field">
-            <label class="field-label" for="unit">단원명 <span class="required" aria-hidden="true">*</span></label>
-            <input id="unit" name="unit" type="text" maxlength="100" placeholder="예: 태양계와 별" autocomplete="off" required>
+          <div id="pdf-fields" role="tabpanel" aria-labelledby="tab-pdf" hidden>
+            <div class="field">
+              <span class="field-label">PDF 자료</span>
+              <label class="dropzone" id="dropzone">
+                <input id="pdf-input" type="file" accept="application/pdf,.pdf">
+                <span class="dropzone-icon" aria-hidden="true">📄</span>
+                <strong>PDF를 클릭해서 고르거나 끌어다 놓으세요</strong>
+                <span>최대 20MB · 글자를 선택할 수 있는 PDF</span>
+              </label>
+              <div class="file-card" id="file-card" hidden>
+                <span class="file-icon" aria-hidden="true">PDF</span>
+                <div class="file-meta">
+                  <div class="file-name" id="file-name"></div>
+                  <div class="file-pages" id="file-pages"></div>
+                </div>
+                <button class="small-button" id="change-file" type="button">다른 PDF</button>
+              </div>
+              <div class="sample-row">
+                <button class="link-button" id="sample-button" type="button">예시 PDF로 체험하기</button>
+                <a href="/samples/sample.pdf" target="_blank" rel="noopener">예시 PDF 보기 ↗</a>
+              </div>
+              <p class="field-info" id="pdf-info" role="status" hidden></p>
+              <p class="field-error" id="pdf-error" role="alert" hidden></p>
+            </div>
+
+            <div class="field" id="range-field" hidden>
+              <span class="field-label" id="range-label">출제 범위</span>
+              <div class="range-row" role="group" aria-labelledby="range-label">
+                <input id="page-start" type="number" min="1" step="1" inputmode="numeric" aria-label="시작 쪽">
+                <span>쪽부터</span>
+                <input id="page-end" type="number" min="1" step="1" inputmode="numeric" aria-label="끝 쪽">
+                <span>쪽까지</span>
+              </div>
+              <p class="hint">한 번에 최대 30쪽까지 고를 수 있어요. 이 범위의 내용에서만 문제를 내요.</p>
+              <p class="field-error" id="range-error" hidden></p>
+            </div>
+
+            <p class="note">🔒 PDF는 서버에 올라가거나 저장되지 않아요. 브라우저에서 선택한 범위의 글자만 읽어 문제 생성에 사용해요.</p>
           </div>
 
           <fieldset class="field">
@@ -259,12 +375,17 @@
               <label class="type-option">
                 <input type="radio" name="type" value="multiple" checked>
                 <span class="type-icon" aria-hidden="true">✅</span>
-                <span><strong>객관식</strong><small>4지선다</small></span>
+                <strong>객관식</strong><small>4지선다</small>
               </label>
               <label class="type-option">
                 <input type="radio" name="type" value="short">
                 <span class="type-icon" aria-hidden="true">✏️</span>
-                <span><strong>주관식</strong><small>예시 정답 제공</small></span>
+                <strong>주관식</strong><small>예시 정답</small>
+              </label>
+              <label class="type-option">
+                <input type="radio" name="type" value="mixed">
+                <span class="type-icon" aria-hidden="true">🧩</span>
+                <strong>복합</strong><small>객관식·주관식·OX</small>
               </label>
             </div>
           </fieldset>
@@ -272,7 +393,7 @@
           <div class="field">
             <label class="field-label" for="count">문항 수</label>
             <div class="count-row">
-              <input id="count" name="count" type="number" min="1" max="25" step="1" value="10" inputmode="numeric" aria-describedby="count-hint count-error">
+              <input id="count" type="number" min="1" max="25" step="1" value="10" inputmode="numeric" aria-describedby="count-hint count-error">
               <div class="count-presets" role="group" aria-label="문항 수 빠른 선택">
                 <button class="preset" type="button" data-count="5">5</button>
                 <button class="preset" type="button" data-count="10">10</button>
@@ -285,8 +406,7 @@
           </div>
 
           <p class="field-error" id="form-error" role="alert" hidden></p>
-
-          <button class="generate-button" id="generate-button" type="submit">퀴즈 만들기</button>
+          <button class="primary-button" id="generate-button" type="submit">퀴즈 만들기</button>
         </form>
       </section>
 
@@ -296,11 +416,17 @@
             <h2 id="result-title">생성된 퀴즈</h2>
             <span class="badge" id="result-badge">대기 중</span>
           </div>
-          <div class="result-actions">
-            <button class="small-button" id="toggle-answers" type="button" disabled>정답 모두 보기</button>
-            <button class="small-button" id="copy-button" type="button" disabled>텍스트 복사</button>
-            <button class="small-button" id="download-button" type="button" disabled>JSON 저장</button>
-            <button class="small-button" id="print-button" type="button" disabled>인쇄</button>
+          <div class="toolbar">
+            <div class="segmented" role="group" aria-label="보기 방식">
+              <button id="view-teacher" type="button" aria-pressed="true" disabled>교사용 보기</button>
+              <button id="view-solve" type="button" aria-pressed="false" disabled>학생 풀이</button>
+            </div>
+            <div class="result-actions" id="teacher-actions">
+              <button class="small-button" id="toggle-answers" type="button" disabled>정답 모두 보기</button>
+              <button class="small-button" id="copy-button" type="button" disabled>텍스트 복사</button>
+              <button class="small-button" id="download-button" type="button" disabled>JSON 저장</button>
+              <button class="small-button" id="print-button" type="button" disabled>인쇄</button>
+            </div>
           </div>
         </div>
         <div class="result-body">
@@ -308,106 +434,52 @@
           <div class="empty-state" id="empty-state">
             <div class="empty-icon" aria-hidden="true">📝</div>
             <h3>아직 만든 퀴즈가 없어요</h3>
-            <p>왼쪽에서 과목과 단원명을 입력한 뒤 ‘퀴즈 만들기’를 눌러주세요.</p>
+            <p>왼쪽에서 주제를 입력하거나 PDF를 고른 뒤 ‘퀴즈 만들기’를 눌러주세요.</p>
           </div>
           <div class="skeleton" id="skeleton" hidden aria-hidden="true"><div></div><div></div><div></div></div>
+          <div class="score-card" id="score-card" hidden tabindex="-1">
+            <div class="score-value" id="score-value"></div>
+            <div class="score-text"><strong id="score-title"></strong><span id="score-detail"></span></div>
+          </div>
           <ol class="result-list" id="result-list"></ol>
+          <div class="solve-footer" id="solve-footer" hidden>
+            <p class="hint" id="solve-hint"></p>
+            <button class="primary-button" id="grade-button" type="button">채점하기</button>
+            <button class="primary-button" id="retry-button" type="button" hidden>다시 풀기</button>
+          </div>
         </div>
       </section>
     </div>
   </main>
 
   <script>
-    const API_URL = "/api/generate";
-    const CLIENT_TIMEOUT_MS = 130000;
+    const PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38";
+    const MAX_COUNT = 25;
+    const MAX_PDF_BYTES = 20 * 1024 * 1024;
+    const MAX_RANGE_PAGES = 30;
+    const SOURCE_MIN_LENGTH = 100;
+    const SOURCE_MAX_LENGTH = 40000;
     const MARKS = ["①", "②", "③", "④"];
-    const TYPE_LABELS = { multiple: "객관식", short: "주관식" };
+    const TYPE_LABELS = { multiple: "객관식", short: "주관식", mixed: "복합" };
+    const KIND_LABELS = { multiple: "객관식", short: "주관식", ox: "OX" };
 
-    const form = document.getElementById("quiz-form");
-    const subjectInput = document.getElementById("subject");
-    const unitInput = document.getElementById("unit");
-    const countInput = document.getElementById("count");
-    const countError = document.getElementById("count-error");
-    const formError = document.getElementById("form-error");
-    const generateButton = document.getElementById("generate-button");
+    const $ = (id) => document.getElementById(id);
+    const form = $("quiz-form");
+    const countInput = $("count");
     const presets = Array.from(document.querySelectorAll(".preset"));
-    const statusBox = document.getElementById("status");
-    const emptyState = document.getElementById("empty-state");
-    const skeleton = document.getElementById("skeleton");
-    const resultList = document.getElementById("result-list");
-    const resultTitle = document.getElementById("result-title");
-    const resultBadge = document.getElementById("result-badge");
-    const toggleButton = document.getElementById("toggle-answers");
-    const copyButton = document.getElementById("copy-button");
-    const downloadButton = document.getElementById("download-button");
-    const printButton = document.getElementById("print-button");
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const resultList = $("result-list");
 
-    let current = null;
-    let answersOpen = false;
-
-    function setStatus(message, kind) {
-      statusBox.textContent = message || "";
-      statusBox.className = "status " + (kind || "info");
-      statusBox.hidden = !message;
-    }
-
-    function syncPresets() {
-      presets.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.count === countInput.value)));
-    }
-
-    function readCount() {
-      const raw = countInput.value.trim();
-      if (!/^\d+$/.test(raw)) return null;
-      const value = Number(raw);
-      return value >= 1 && value <= 25 ? value : null;
-    }
-
-    function showFieldError(input, errorEl, message) {
-      input.setAttribute("aria-invalid", message ? "true" : "false");
-      if (errorEl) {
-        errorEl.textContent = message || "";
-        errorEl.hidden = !message;
-      }
-    }
-
-    presets.forEach((button) => {
-      button.addEventListener("click", () => {
-        countInput.value = button.dataset.count;
-        showFieldError(countInput, countError, "");
-        syncPresets();
-      });
-    });
-    countInput.addEventListener("input", () => {
-      showFieldError(countInput, countError, "");
-      syncPresets();
-    });
-    [subjectInput, unitInput].forEach((input) => input.addEventListener("input", () => {
-      showFieldError(input, null, "");
-      formError.hidden = true;
-    }));
-    syncPresets();
-
-    function setLoading(loading) {
-      generateButton.disabled = loading;
-      generateButton.replaceChildren();
-      if (loading) {
-        const spinner = document.createElement("span");
-        spinner.className = "spinner";
-        spinner.setAttribute("aria-hidden", "true");
-        generateButton.append(spinner, "만들고 있어요…");
-      } else {
-        generateButton.textContent = current ? "다시 만들기" : "퀴즈 만들기";
-      }
-      form.setAttribute("aria-busy", String(loading));
-      skeleton.hidden = !loading;
-      if (loading) {
-        emptyState.hidden = true;
-        resultList.replaceChildren();
-      }
-      [toggleButton, copyButton, downloadButton, printButton].forEach((button) => {
-        button.disabled = loading || !current;
-      });
-    }
+    const state = {
+      mode: "topic",
+      pdf: null,
+      quiz: null,
+      view: "teacher",
+      responses: [],
+      grades: null,
+      answersOpen: false,
+      busy: false
+    };
 
     function el(tag, className, text) {
       const node = document.createElement(tag);
@@ -416,154 +488,628 @@
       return node;
     }
 
-    function render(quiz) {
-      resultList.replaceChildren();
-      quiz.questions.forEach((item, index) => {
-        const card = el("li", "item-card");
-        const head = el("div", "item-head");
-        head.append(el("span", "item-number", String(index + 1)), el("p", "item-question", item.question));
-        card.append(head);
-
-        const answerBody = el("div", "answer-body");
-        if (quiz.type === "multiple") {
-          const choices = el("ol", "choices");
-          item.choices.forEach((choice, choiceIndex) => {
-            const li = el("li", choiceIndex + 1 === item.answer ? "correct-candidate" : "");
-            li.append(el("span", "choice-mark", MARKS[choiceIndex]), el("span", "", choice));
-            choices.append(li);
-          });
-          card.append(choices);
-          answerBody.append(el("p", "", "정답: " + MARKS[item.answer - 1] + " " + item.choices[item.answer - 1]));
-        } else {
-          answerBody.append(el("p", "", "예시 정답: " + item.answer));
-        }
-        answerBody.append(el("p", "", "해설: " + item.explanation));
-
-        const details = el("details", "answer");
-        details.open = answersOpen;
-        details.addEventListener("toggle", () => highlightAnswer(card, details.open));
-        details.append(el("summary", "", "정답 및 해설"), answerBody);
-        card.append(details);
-        highlightAnswer(card, answersOpen);
-        resultList.append(card);
-      });
-
-      resultTitle.textContent = quiz.subject + " · " + quiz.unit;
-      resultBadge.textContent = TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항";
-      emptyState.hidden = true;
+    function setStatus(message, kind) {
+      const box = $("status");
+      box.textContent = message || "";
+      box.className = "status " + (kind || "info");
+      box.hidden = !message;
     }
 
-    function highlightAnswer(card, open) {
-      card.querySelectorAll(".choices li.correct-candidate").forEach((li) => li.classList.toggle("correct", open));
+    function showMessage(id, message) {
+      $(id).textContent = message || "";
+      $(id).hidden = !message;
     }
 
-    function setAnswersOpen(open) {
-      answersOpen = open;
-      resultList.querySelectorAll("details.answer").forEach((details) => { details.open = open; });
-      toggleButton.textContent = open ? "정답 모두 숨기기" : "정답 모두 보기";
+    async function postJson(url, body, timeoutMs) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error((data && data.error) || "서버 오류가 발생했습니다. (" + response.status + ")");
+        if (!data) throw new Error("서버 응답을 읽을 수 없습니다.");
+        return data;
+      } catch (error) {
+        if (error.name === "AbortError") throw new Error("응답이 너무 오래 걸려 요청을 중단했어요. 문항 수나 범위를 줄여 다시 시도해주세요.");
+        if (error instanceof TypeError) throw new Error("서버에 연결하지 못했어요. 네트워크 상태를 확인해주세요.");
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
-    function toText(quiz) {
-      const lines = ["[" + quiz.subject + "] " + quiz.unit + " - " + TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항", ""];
-      quiz.questions.forEach((item, index) => {
-        lines.push((index + 1) + ". " + item.question);
-        if (quiz.type === "multiple") {
-          item.choices.forEach((choice, i) => lines.push("   " + MARKS[i] + " " + choice));
-        }
-        lines.push("");
-      });
-      lines.push("---- 정답 및 해설 ----");
-      quiz.questions.forEach((item, index) => {
-        const answer = quiz.type === "multiple" ? MARKS[item.answer - 1] + " " + item.choices[item.answer - 1] : item.answer;
-        lines.push((index + 1) + ". " + answer + " — " + item.explanation);
-      });
-      return lines.join("\n");
+    // ---------- 입력: 출제 방식, 문항 수 ----------
+    function setMode(mode) {
+      state.mode = mode;
+      tabs.forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.mode === mode)));
+      $("topic-fields").hidden = mode !== "topic";
+      $("pdf-fields").hidden = mode !== "pdf";
+      showMessage("form-error", "");
+    }
+    tabs.forEach((tab) => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
+
+    function syncPresets() {
+      presets.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.count === countInput.value)));
+    }
+    presets.forEach((button) => button.addEventListener("click", () => {
+      countInput.value = button.dataset.count;
+      countInput.setAttribute("aria-invalid", "false");
+      showMessage("count-error", "");
+      syncPresets();
+    }));
+    countInput.addEventListener("input", () => {
+      countInput.setAttribute("aria-invalid", "false");
+      showMessage("count-error", "");
+      syncPresets();
+    });
+    ["subject", "unit"].forEach((id) => $(id).addEventListener("input", () => {
+      $(id).setAttribute("aria-invalid", "false");
+      showMessage("form-error", "");
+    }));
+    syncPresets();
+
+    function readInt(input) {
+      const raw = input.value.trim();
+      return /^\d+$/.test(raw) ? Number(raw) : null;
+    }
+
+    // ---------- PDF ----------
+    let pdfjsPromise = null;
+    function loadPdfjs() {
+      if (!pdfjsPromise) {
+        pdfjsPromise = import(PDFJS_BASE + "/build/pdf.min.mjs").then((lib) => {
+          lib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "/build/pdf.worker.min.mjs";
+          return lib;
+        }).catch((error) => {
+          pdfjsPromise = null;
+          throw error;
+        });
+      }
+      return pdfjsPromise;
+    }
+
+    function setPdfBusy(message) {
+      showMessage("pdf-info", message);
+      showMessage("pdf-error", "");
+    }
+
+    async function openPdf(data, name) {
+      setPdfBusy("PDF를 여는 중이에요…");
+      let lib;
+      try {
+        lib = await loadPdfjs();
+      } catch {
+        showMessage("pdf-info", "");
+        showMessage("pdf-error", "PDF 도구를 불러오지 못했어요. 인터넷 연결을 확인해주세요.");
+        return;
+      }
+
+      let doc;
+      try {
+        doc = await lib.getDocument({ data, cMapUrl: PDFJS_BASE + "/cmaps/", cMapPacked: true }).promise;
+      } catch (error) {
+        showMessage("pdf-info", "");
+        showMessage("pdf-error", error && error.name === "PasswordException"
+          ? "암호가 걸린 PDF는 열 수 없어요."
+          : "PDF 파일을 열 수 없어요. 파일이 손상되지 않았는지 확인해주세요.");
+        return;
+      }
+
+      if (state.pdf) state.pdf.doc.destroy();
+      state.pdf = { doc, name, numPages: doc.numPages };
+      $("file-name").textContent = name;
+      $("file-name").title = name;
+      $("file-pages").textContent = "전체 " + doc.numPages + "쪽";
+      $("dropzone").hidden = true;
+      $("file-card").hidden = false;
+      $("range-field").hidden = false;
+      $("page-start").max = $("page-end").max = String(doc.numPages);
+      $("page-start").value = "1";
+      $("page-end").value = String(Math.min(doc.numPages, 10));
+      showMessage("range-error", "");
+      showMessage("pdf-info", "");
+      showMessage("form-error", "");
+    }
+
+    async function handleFile(file) {
+      if (!file) return;
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      if (!isPdf) return showMessage("pdf-error", "PDF 파일만 올릴 수 있어요.");
+      if (file.size > MAX_PDF_BYTES) return showMessage("pdf-error", "20MB 이하의 PDF만 올릴 수 있어요.");
+      try {
+        await openPdf(new Uint8Array(await file.arrayBuffer()), file.name);
+      } catch {
+        showMessage("pdf-info", "");
+        showMessage("pdf-error", "파일을 읽지 못했어요.");
+      }
+    }
+
+    $("pdf-input").addEventListener("change", (event) => {
+      handleFile(event.target.files[0]);
+      event.target.value = "";
+    });
+    $("change-file").addEventListener("click", () => $("pdf-input").click());
+
+    const dropzone = $("dropzone");
+    ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (event) => {
+      event.preventDefault();
+      dropzone.classList.add("dragging");
+    }));
+    ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, () => dropzone.classList.remove("dragging")));
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      handleFile(event.dataTransfer.files[0]);
+    });
+
+    $("sample-button").addEventListener("click", async () => {
+      setMode("pdf");
+      setPdfBusy("예시 PDF를 불러오는 중이에요…");
+      try {
+        const response = await fetch("/samples/sample.pdf");
+        if (!response.ok) throw new Error();
+        await openPdf(new Uint8Array(await response.arrayBuffer()), "예시_연소와 소화.pdf");
+      } catch {
+        showMessage("pdf-info", "");
+        showMessage("pdf-error", "예시 PDF를 불러오지 못했어요.");
+      }
+    });
+
+    ["page-start", "page-end"].forEach((id) => $(id).addEventListener("input", () => {
+      $(id).setAttribute("aria-invalid", "false");
+      showMessage("range-error", "");
+    }));
+
+    function readRange() {
+      const start = readInt($("page-start"));
+      const end = readInt($("page-end"));
+      const total = state.pdf.numPages;
+      let error = "";
+      if (!start || !end || start < 1 || end > total || start > end) error = "1~" + total + "쪽 사이에서 시작 쪽이 끝 쪽보다 크지 않게 입력해주세요.";
+      else if (end - start + 1 > MAX_RANGE_PAGES) error = "한 번에 최대 " + MAX_RANGE_PAGES + "쪽까지 고를 수 있어요.";
+      $("page-start").setAttribute("aria-invalid", String(!!error));
+      $("page-end").setAttribute("aria-invalid", String(!!error));
+      showMessage("range-error", error);
+      return error ? null : { start, end };
+    }
+
+    async function extractText(doc, start, end) {
+      const pages = [];
+      for (let number = start; number <= end; number++) {
+        setStatus("PDF에서 글자를 읽고 있어요… (" + (number - start + 1) + "/" + (end - start + 1) + "쪽)", "info");
+        const page = await doc.getPage(number);
+        const content = await page.getTextContent();
+        let text = "";
+        content.items.forEach((item) => {
+          if (typeof item.str !== "string") return;
+          text += item.str;
+          if (item.hasEOL) text += "\n";
+        });
+        pages.push(text);
+        page.cleanup();
+      }
+      return pages.join("\n\n")
+        .replace(/[ \t\u00a0]+/g, " ")
+        .replace(/ *\n */g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    // ---------- 생성 ----------
+    function setBusy(busy, label) {
+      state.busy = busy;
+      const button = $("generate-button");
+      button.disabled = busy;
+      button.replaceChildren();
+      if (busy) {
+        const spinner = el("span", "spinner");
+        spinner.setAttribute("aria-hidden", "true");
+        button.append(spinner, label || "만들고 있어요…");
+      } else {
+        button.textContent = state.quiz ? "다시 만들기" : "퀴즈 만들기";
+      }
+      form.setAttribute("aria-busy", String(busy));
+      updateToolbar();
+    }
+
+    function collectTopic() {
+      const subject = $("subject").value.trim();
+      const unit = $("unit").value.trim();
+      $("subject").setAttribute("aria-invalid", String(!subject));
+      $("unit").setAttribute("aria-invalid", String(!unit));
+      if (!subject || !unit) {
+        showMessage("form-error", "과목과 단원명을 모두 입력해주세요.");
+        (subject ? $("unit") : $("subject")).focus();
+        return null;
+      }
+      return { mode: "topic", subject, unit };
+    }
+
+    function pdfLabel(name) {
+      const base = name.replace(/\.pdf$/i, "");
+      return base.length > 50 ? base.slice(0, 49) + "…" : base;
     }
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      formError.hidden = true;
+      if (state.busy) return;
+      showMessage("form-error", "");
 
-      const subject = subjectInput.value.trim();
-      const unit = unitInput.value.trim();
-      const count = readCount();
-      showFieldError(subjectInput, null, subject ? "" : "x");
-      showFieldError(unitInput, null, unit ? "" : "x");
-      showFieldError(countInput, countError, count ? "" : "문항 수는 1~25 사이의 정수로 입력해주세요.");
+      const count = readInt(countInput);
+      const validCount = count && count >= 1 && count <= MAX_COUNT;
+      countInput.setAttribute("aria-invalid", String(!validCount));
+      showMessage("count-error", validCount ? "" : "문항 수는 1~25 사이의 정수로 입력해주세요.");
 
-      if (!subject || !unit) {
-        formError.textContent = "과목과 단원명을 모두 입력해주세요.";
-        formError.hidden = false;
-        (subject ? unitInput : subjectInput).focus();
-        return;
+      let base;
+      let range;
+      if (state.mode === "topic") {
+        base = collectTopic();
+        if (!base) return;
+      } else {
+        if (!state.pdf) {
+          showMessage("form-error", "먼저 PDF를 고르거나 예시 PDF로 체험해보세요.");
+          return;
+        }
+        range = readRange();
+        if (!range) return;
       }
-      if (!count) {
-        countInput.focus();
-        return;
-      }
+      if (!validCount) return countInput.focus();
 
-      const payload = { subject, unit, type: form.elements.type.value, count };
-      setLoading(true);
-      setStatus(TYPE_LABELS[payload.type] + " " + count + "문항을 만들고 있어요. " + (count > 10 ? "문항이 많아 1분 이상 걸릴 수 있어요." : "잠시만 기다려주세요."), "info");
+      const type = form.elements.type.value;
+      setBusy(true);
+      $("empty-state").hidden = true;
+      $("skeleton").hidden = false;
+      $("score-card").hidden = true;
+      $("solve-footer").hidden = true;
+      resultList.replaceChildren();
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
       try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error((data && data.error) || "서버 오류가 발생했습니다. (" + response.status + ")");
+        let payload;
+        if (state.mode === "topic") {
+          payload = { ...base, type, count };
+        } else {
+          const sourceText = await extractText(state.pdf.doc, range.start, range.end);
+          if (!sourceText) throw new Error("선택한 범위에서 글자를 찾지 못했어요. 스캔한 이미지로 된 PDF는 지원하지 않아요.");
+          if (sourceText.length < SOURCE_MIN_LENGTH) throw new Error("선택한 범위의 글자가 너무 적어요(" + sourceText.length + "자). 범위를 넓혀주세요.");
+          if (sourceText.length > SOURCE_MAX_LENGTH) throw new Error("선택한 범위의 글자가 너무 많아요(" + sourceText.length.toLocaleString() + "자). 4만 자 이하가 되도록 범위를 줄여주세요.");
+          payload = {
+            mode: "pdf",
+            subject: pdfLabel(state.pdf.name),
+            unit: range.start === range.end ? range.start + "쪽" : range.start + "~" + range.end + "쪽",
+            type,
+            count,
+            sourceText
+          };
         }
-        if (!data || !Array.isArray(data.questions) || data.questions.length !== count) {
-          throw new Error("서버 응답 형식이 올바르지 않습니다.");
-        }
-        current = data;
-        setAnswersOpen(false);
-        render(current);
+
+        setStatus(TYPE_LABELS[type] + " " + count + "문항을 만들고 있어요. " + (count > 10 ? "문항이 많아 1분 정도 걸릴 수 있어요." : "잠시만 기다려주세요."), "info");
+        const data = await postJson("/api/generate", payload, 130000);
+        if (!Array.isArray(data.questions) || data.questions.length !== count) throw new Error("서버 응답 형식이 올바르지 않습니다.");
+
+        state.quiz = data;
+        state.responses = data.questions.map(() => null);
+        state.grades = null;
+        state.answersOpen = false;
         setStatus("", "info");
       } catch (error) {
-        const message = error.name === "AbortError"
-          ? "응답 시간이 너무 오래 걸려 요청을 중단했어요. 문항 수를 줄여 다시 시도해주세요."
-          : error instanceof TypeError
-            ? "서버에 연결하지 못했어요. 네트워크 상태를 확인해주세요."
-            : error.message;
-        setStatus(message, "error");
-        if (current) render(current); else emptyState.hidden = false;
+        setStatus(error.message || "요청에 실패했어요.", "error");
       } finally {
-        clearTimeout(timer);
-        setLoading(false);
+        $("skeleton").hidden = true;
+        setBusy(false);
+        render();
       }
     });
 
-    toggleButton.addEventListener("click", () => setAnswersOpen(!answersOpen));
+    // ---------- 결과 화면 ----------
+    function answerText(item) {
+      if (item.kind === "multiple") return MARKS[item.answer - 1] + " " + item.choices[item.answer - 1];
+      return item.answer;
+    }
 
-    copyButton.addEventListener("click", async () => {
-      if (!current) return;
+    function responseText(item, response) {
+      if (item.kind === "multiple") return MARKS[response - 1] + " " + item.choices[response - 1];
+      return response;
+    }
+
+    function cardHead(item, index) {
+      const head = el("div", "item-head");
+      const question = el("p", "item-question");
+      question.append(el("span", "kind-tag", KIND_LABELS[item.kind]), document.createTextNode(item.question));
+      head.append(el("span", "item-number", String(index + 1)), question);
+      return head;
+    }
+
+    function teacherCard(item, index) {
+      const card = el("li", "item-card" + (state.answersOpen ? " revealed" : ""));
+      card.append(cardHead(item, index));
+      const body = el("div", "item-body");
+
+      if (item.kind === "multiple") {
+        const list = el("ol", "choices");
+        item.choices.forEach((choice, i) => {
+          const li = el("li", i + 1 === item.answer ? "is-answer" : "");
+          li.append(el("span", "choice-mark", MARKS[i]), el("span", "", choice));
+          list.append(li);
+        });
+        body.append(list);
+      } else if (item.kind === "ox") {
+        const row = el("div", "ox-preview");
+        ["O", "X"].forEach((value) => row.append(el("span", "ox-chip" + (item.answer === value ? " is-answer" : ""), value)));
+        body.append(row);
+      }
+
+      const details = el("details", "answer");
+      details.open = state.answersOpen;
+      const answerBody = el("div", "answer-body");
+      answerBody.append(
+        el("p", "", (item.kind === "short" ? "예시 정답: " : "정답: ") + answerText(item)),
+        el("p", "", "해설: " + item.explanation)
+      );
+      details.append(el("summary", "", "정답 및 해설"), answerBody);
+      details.addEventListener("toggle", () => card.classList.toggle("revealed", details.open));
+      body.append(details);
+      card.append(body);
+      return card;
+    }
+
+    function choiceInput(index, value, label, mark, grade, item) {
+      const wrapper = el("label", "solve-choice");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "q" + index;
+      input.value = String(value);
+      input.checked = state.responses[index] === value;
+      input.disabled = !!state.grades;
+      input.addEventListener("change", () => { state.responses[index] = value; updateSolveHint(); });
+      if (grade) {
+        if (value === item.answer) wrapper.classList.add("is-correct");
+        else if (state.responses[index] === value) wrapper.classList.add("is-wrong");
+      }
+      wrapper.append(input);
+      if (mark) wrapper.append(el("span", "choice-mark", mark));
+      wrapper.append(el("span", "", label));
+      return wrapper;
+    }
+
+    function solveCard(item, index) {
+      const grade = state.grades ? state.grades[index] : null;
+      const card = el("li", "item-card" + (grade ? " " + grade.status : ""));
+      card.append(cardHead(item, index));
+      const body = el("div", "item-body");
+
+      if (item.kind === "multiple") {
+        const group = el("div", "solve-choices");
+        group.setAttribute("role", "radiogroup");
+        group.setAttribute("aria-label", (index + 1) + "번 보기");
+        item.choices.forEach((choice, i) => group.append(choiceInput(index, i + 1, choice, MARKS[i], grade, item)));
+        body.append(group);
+      } else if (item.kind === "ox") {
+        const group = el("div", "solve-ox");
+        group.setAttribute("role", "radiogroup");
+        group.setAttribute("aria-label", (index + 1) + "번 O 또는 X");
+        ["O", "X"].forEach((value) => group.append(choiceInput(index, value, value, "", grade, item)));
+        body.append(group);
+      } else {
+        const textarea = el("textarea", "solve-text");
+        textarea.rows = 2;
+        textarea.maxLength = 500;
+        textarea.placeholder = "답을 입력하세요";
+        textarea.value = state.responses[index] || "";
+        textarea.disabled = !!state.grades;
+        textarea.setAttribute("aria-label", (index + 1) + "번 답");
+        textarea.addEventListener("input", () => { state.responses[index] = textarea.value; updateSolveHint(); });
+        body.append(textarea);
+      }
+
+      if (grade) {
+        const labels = { correct: "⭕ 정답", wrong: "❌ 오답", error: "⚠️ 채점 실패" };
+        const box = el("div", "grade-box");
+        box.append(el("p", "grade-label", labels[grade.status]));
+        const response = state.responses[index];
+        if (isAnswered(item, response)) {
+          if (item.kind === "short") box.append(el("p", "", "내 답: " + response.trim()));
+        } else {
+          box.append(el("p", "", "내 답: (답하지 않음)"));
+        }
+        box.append(el("p", "", (item.kind === "short" ? "예시 정답: " : "정답: ") + answerText(item)));
+        if (grade.feedback) box.append(el("p", "", "피드백: " + grade.feedback));
+        box.append(el("p", "", "해설: " + item.explanation));
+        body.append(box);
+      }
+
+      card.append(body);
+      return card;
+    }
+
+    function isAnswered(item, response) {
+      if (item.kind === "multiple") return Number.isInteger(response);
+      if (item.kind === "ox") return response === "O" || response === "X";
+      return typeof response === "string" && response.trim() !== "";
+    }
+
+    function updateSolveHint() {
+      if (!state.quiz || state.grades) return;
+      const total = state.quiz.questions.length;
+      const answered = state.quiz.questions.filter((item, i) => isAnswered(item, state.responses[i])).length;
+      $("solve-hint").textContent = total + "문항 중 " + answered + "문항에 답했어요.";
+    }
+
+    function updateToolbar() {
+      const hasQuiz = !!state.quiz;
+      $("view-teacher").disabled = $("view-solve").disabled = !hasQuiz || state.busy;
+      $("view-teacher").setAttribute("aria-pressed", String(state.view === "teacher"));
+      $("view-solve").setAttribute("aria-pressed", String(state.view === "solve"));
+      $("teacher-actions").hidden = state.view !== "teacher";
+      ["toggle-answers", "copy-button", "download-button", "print-button"].forEach((id) => {
+        $(id).disabled = !hasQuiz || state.busy;
+      });
+      $("toggle-answers").textContent = state.answersOpen ? "정답 모두 숨기기" : "정답 모두 보기";
+      $("grade-button").disabled = state.busy;
+      $("retry-button").disabled = state.busy;
+    }
+
+    function renderScore() {
+      const card = $("score-card");
+      if (state.view !== "solve" || !state.grades) {
+        card.hidden = true;
+        return;
+      }
+      const total = state.grades.length;
+      const correct = state.grades.filter((g) => g.status === "correct").length;
+      const failed = state.grades.filter((g) => g.status === "error").length;
+      $("score-value").textContent = Math.round((correct / total) * 100) + "점";
+      $("score-title").textContent = total + "문항 중 " + correct + "문항을 맞혔어요.";
+      $("score-detail").textContent = failed
+        ? "자동 채점에 실패한 " + failed + "문항은 예시 정답과 직접 비교해보세요."
+        : "틀린 문항의 정답과 해설을 확인해보세요.";
+      card.hidden = false;
+    }
+
+    function render() {
+      const quiz = state.quiz;
+      updateToolbar();
+      resultList.replaceChildren();
+      if (!quiz) {
+        $("empty-state").hidden = false;
+        $("solve-footer").hidden = true;
+        $("score-card").hidden = true;
+        return;
+      }
+
+      $("empty-state").hidden = true;
+      $("result-title").textContent = quiz.subject + " · " + quiz.unit;
+      $("result-badge").textContent = TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항";
+      quiz.questions.forEach((item, index) => {
+        resultList.append(state.view === "solve" ? solveCard(item, index) : teacherCard(item, index));
+      });
+
+      renderScore();
+      const solving = state.view === "solve";
+      $("solve-footer").hidden = !solving;
+      $("grade-button").hidden = !!state.grades;
+      $("retry-button").hidden = !state.grades;
+      if (solving && state.grades) $("solve-hint").textContent = "다시 풀면 답과 채점 결과가 지워져요.";
+      else updateSolveHint();
+    }
+
+    function setView(view) {
+      if (!state.quiz || state.view === view) return;
+      state.view = view;
+      setStatus("", "info");
+      render();
+    }
+    $("view-teacher").addEventListener("click", () => setView("teacher"));
+    $("view-solve").addEventListener("click", () => setView("solve"));
+
+    $("toggle-answers").addEventListener("click", () => {
+      state.answersOpen = !state.answersOpen;
+      render();
+    });
+
+    // ---------- 채점 ----------
+    function normalizeAnswer(text) {
+      return String(text).toLowerCase().replace(/[\s.,!?'"“”‘’·~()\-]/g, "");
+    }
+
+    $("grade-button").addEventListener("click", async () => {
+      const quiz = state.quiz;
+      if (!quiz || state.busy) return;
+      const unanswered = quiz.questions.filter((item, i) => !isAnswered(item, state.responses[i])).length;
+      if (unanswered && !window.confirm("답하지 않은 문항이 " + unanswered + "개 있어요. 그대로 채점할까요?\n답하지 않은 문항은 오답으로 처리돼요.")) return;
+
+      const grades = quiz.questions.map(() => null);
+      const pending = [];
+      quiz.questions.forEach((item, i) => {
+        const response = state.responses[i];
+        if (!isAnswered(item, response)) grades[i] = { status: "wrong", feedback: "답하지 않았어요." };
+        else if (item.kind !== "short") grades[i] = { status: response === item.answer ? "correct" : "wrong" };
+        else if (normalizeAnswer(response) === normalizeAnswer(item.answer)) grades[i] = { status: "correct", feedback: "예시 정답과 같아요." };
+        else pending.push(i);
+      });
+
+      if (pending.length) {
+        setBusy(true, "채점하고 있어요…");
+        $("grade-button").textContent = "채점 중…";
+        resultList.inert = true;
+        setStatus("주관식 " + pending.length + "문항을 AI가 채점하고 있어요.", "info");
+        try {
+          const data = await postJson("/api/grade", {
+            items: pending.map((i) => ({
+              question: quiz.questions[i].question,
+              answer: quiz.questions[i].answer,
+              explanation: quiz.questions[i].explanation,
+              response: state.responses[i].trim()
+            }))
+          }, 70000);
+          if (!Array.isArray(data.results) || data.results.length !== pending.length) throw new Error("채점 응답 형식이 올바르지 않습니다.");
+          pending.forEach((qi, k) => {
+            grades[qi] = { status: data.results[k].correct ? "correct" : "wrong", feedback: data.results[k].feedback };
+          });
+          setStatus("", "info");
+        } catch (error) {
+          pending.forEach((qi) => { grades[qi] = { status: "error", feedback: "자동 채점에 실패했어요. 예시 정답과 비교해보세요." }; });
+          setStatus("주관식 자동 채점에 실패했어요. " + error.message, "error");
+        } finally {
+          resultList.inert = false;
+          $("grade-button").textContent = "채점하기";
+          setBusy(false);
+        }
+      }
+
+      if (state.quiz !== quiz) return;
+      state.grades = grades;
+      render();
+      $("score-card").focus();
+      $("score-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    $("retry-button").addEventListener("click", () => {
+      state.responses = state.quiz.questions.map(() => null);
+      state.grades = null;
+      setStatus("", "info");
+      render();
+      resultList.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // ---------- 내보내기 ----------
+    function toText(quiz) {
+      const lines = ["[" + quiz.subject + "] " + quiz.unit + " - " + TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항", ""];
+      quiz.questions.forEach((item, index) => {
+        const tag = quiz.type === "mixed" ? "[" + KIND_LABELS[item.kind] + "] " : "";
+        lines.push((index + 1) + ". " + tag + item.question);
+        if (item.kind === "multiple") item.choices.forEach((choice, i) => lines.push("   " + MARKS[i] + " " + choice));
+        if (item.kind === "ox") lines.push("   ( O / X )");
+        lines.push("");
+      });
+      lines.push("---- 정답 및 해설 ----");
+      quiz.questions.forEach((item, index) => lines.push((index + 1) + ". " + answerText(item) + " — " + item.explanation));
+      return lines.join("\n");
+    }
+
+    $("copy-button").addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(toText(current));
+        await navigator.clipboard.writeText(toText(state.quiz));
         setStatus("퀴즈를 텍스트로 복사했어요.", "info");
       } catch {
         setStatus("클립보드에 복사하지 못했어요. 브라우저 권한을 확인해주세요.", "error");
       }
     });
 
-    downloadButton.addEventListener("click", () => {
-      if (!current) return;
-      const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json;charset=utf-8" });
+    $("download-button").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state.quiz, null, 2)], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = ("퀴즈_" + current.subject + "_" + current.unit).replace(/[\\/:*?"<>|\s]+/g, "_") + ".json";
+      link.download = ("퀴즈_" + state.quiz.subject + "_" + state.quiz.unit).replace(/[\\/:*?"<>|\s~]+/g, "_") + ".json";
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 0);
     });
 
-    printButton.addEventListener("click", () => window.print());
+    $("print-button").addEventListener("click", () => window.print());
   </script>
 </body>
 </html>
