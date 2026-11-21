@@ -1,0 +1,7 @@
+# Secrets — never commit
+env_local.txt
+.env
+.env.*
+
+node_modules/
+.vercel/

@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f2">
+  <title>퀴즈 메이커 | 과목·단원별 문제 만들기</title>
+  <style>
+    :root {
+      --ink: #1c2924;
+      --muted: #74807a;
+      --line: #e5eae4;
+      --paper: #fff;
+      --canvas: #f5f7f2;
+      --green: #27724c;
+      --green-dark: #1e5c3c;
+      --mint: #e9f4ec;
+      --amber: #f5b94c;
+      --red: #b2472f;
+      --shadow: 0 16px 44px rgba(31, 52, 39, .07);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      display: flex;
+      height: 68px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(24px, calc((100% - 1120px) / 2));
+      border-bottom: 1px solid rgba(31, 52, 39, .07);
+      background: rgba(255, 255, 255, .8);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; letter-spacing: -.04em; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--green); color: #fff; }
+    .top-note { color: var(--muted); font-size: 13px; }
+
+    main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 52px 0 80px; }
+
+    .intro { margin-bottom: 30px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+    .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); content: ""; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); letter-spacing: -.05em; line-height: 1.2; }
+    .intro p { margin: 12px 0 0; color: var(--muted); font-size: 16px; }
+
+    .workspace { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+
+    .panel { border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: var(--shadow); }
+    .form-panel { position: sticky; top: 20px; padding: 26px; }
+    h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .subheading { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+    .field { margin-top: 20px; }
+    .field-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 750; }
+    .required { color: var(--red); }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      height: 46px;
+      padding: 0 13px;
+      border: 1px solid #dde4dd;
+      border-radius: 10px;
+      outline: none;
+      background: #fff;
+      color: var(--ink);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input::placeholder { color: #a4ada6; }
+    input:focus-visible { border-color: #69a780; box-shadow: 0 0 0 3px rgba(39, 114, 76, .12); }
+    input[aria-invalid="true"] { border-color: #d98a76; }
+
+    fieldset { margin: 0; padding: 0; border: 0; }
+    .type-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .type-option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #e1e7e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .type-option:has(input:checked) { border-color: #6ea983; background: #f3f9f4; }
+    .type-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(39, 114, 76, .15); }
+    .type-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .type-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--mint); font-size: 17px; }
+    .type-option strong { display: block; font-size: 14px; }
+    .type-option small { display: block; color: var(--muted); font-size: 11px; }
+
+    .count-row { display: flex; align-items: center; gap: 8px; }
+    .count-row input { width: 92px; text-align: center; font-weight: 700; }
+    .count-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preset {
+      height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      color: #56635b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .preset[aria-pressed="true"] { border-color: #6ea983; background: var(--mint); color: var(--green-dark); }
+    .hint { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .field-error { margin: 6px 0 0; color: var(--red); font-size: 12px; }
+
+    .generate-button {
+      display: flex;
+      width: 100%;
+      height: 50px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+      border: 0;
+      border-radius: 11px;
+      background: var(--green);
+      color: #fff;
+      font-weight: 800;
+      transition: background .15s;
+    }
+    .generate-button:hover { background: var(--green-dark); }
+    .generate-button:disabled { cursor: wait; opacity: .7; }
+
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-panel { min-height: 520px; overflow: hidden; }
+    .result-header {
+      display: flex;
+      flex-wrap: wrap;
+      min-height: 74px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .result-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .result-title h2 { font-size: 16px; }
+    .badge { padding: 3px 9px; border-radius: 20px; background: #f0f3ef; color: #627068; font-size: 11px; font-weight: 700; }
+    .result-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .small-button {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #4f5d55;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .small-button:hover:not(:disabled) { background: #f6f8f5; }
+    .small-button:disabled { cursor: default; opacity: .4; }
+
+    .result-body { padding: 22px; }
+
+    .status { margin: 0 0 16px; padding: 11px 13px; border-radius: 9px; font-size: 13px; }
+    .status[hidden] { display: none; }
+    .status.error { background: #fff1ed; color: var(--red); }
+    .status.info { background: #eef6f0; color: var(--green-dark); }
+
+    .empty-state { display: flex; min-height: 380px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+    .empty-state[hidden] { display: none; }
+    .empty-icon { display: grid; width: 72px; height: 72px; place-items: center; margin-bottom: 16px; border-radius: 22px; background: #eff5ed; font-size: 32px; }
+    .empty-state h3 { margin: 0; font-size: 16px; }
+    .empty-state p { max-width: 300px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+    .skeleton { display: grid; gap: 12px; }
+    .skeleton[hidden] { display: none; }
+    .skeleton div { height: 92px; border-radius: 12px; background: linear-gradient(90deg, #f1f4f0 25%, #f8faf7 50%, #f1f4f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .result-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+    .item-card { padding: 17px 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .item-head { display: flex; gap: 10px; }
+    .item-number { display: grid; width: 26px; height: 26px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--mint); color: var(--green); font-size: 12px; font-weight: 800; }
+    .item-question { margin: 1px 0 0; font-size: 15px; font-weight: 700; line-height: 1.55; white-space: pre-wrap; }
+    .choices { display: grid; gap: 5px; margin: 12px 0 0 36px; padding: 0; list-style: none; color: #47554c; font-size: 14px; }
+    .choices li { display: flex; gap: 7px; }
+    .choices li.correct { color: var(--green-dark); font-weight: 700; }
+    .choice-mark { flex: 0 0 auto; }
+
+    details.answer { margin: 12px 0 0 36px; }
+    details.answer summary { width: fit-content; color: var(--green); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .answer-body { margin-top: 8px; padding: 10px 12px; border-radius: 9px; background: #f4f8f2; color: #355a43; font-size: 13px; }
+    .answer-body p { margin: 0; white-space: pre-wrap; }
+    .answer-body p + p { margin-top: 4px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    @media (max-width: 800px) {
+      .topbar { height: 60px; padding: 0 18px; }
+      .top-note { display: none; }
+      main { width: min(100% - 32px, 600px); padding-top: 32px; }
+      .workspace { grid-template-columns: 1fr; }
+      .form-panel { position: static; padding: 20px; }
+      .result-body { padding: 14px; }
+      .result-header { padding: 14px; }
+      .choices, details.answer { margin-left: 0; }
+    }
+
+    @media print {
+      .topbar, .intro, .form-panel, .result-actions, .status { display: none !important; }
+      main { width: 100%; padding: 0; }
+      .workspace { display: block; }
+      .panel { border: 0; box-shadow: none; }
+      .item-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">Q</span> 퀴즈 메이커</div>
+    <div class="top-note">과목·단원별 수업용 문제 만들기</div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div class="eyebrow">QUIZ GENERATOR</div>
+      <h1>단원에 맞는 퀴즈를 바로 만들어보세요</h1>
+      <p>과목과 단원명을 입력하고 문제 유형과 문항 수를 고르면 AI가 문제를 출제해요.</p>
+    </section>
+
+    <div class="workspace">
+      <section class="panel form-panel" aria-labelledby="form-title">
+        <h2 id="form-title">출제 조건</h2>
+        <p class="subheading">필요한 퀴즈의 조건을 입력해주세요.</p>
+
+        <form id="quiz-form" novalidate>
+          <div class="field">
+            <label class="field-label" for="subject">과목 <span class="required" aria-hidden="true">*</span></label>
+            <input id="subject" name="subject" type="text" maxlength="50" placeholder="예: 과학" autocomplete="off" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="unit">단원명 <span class="required" aria-hidden="true">*</span></label>
+            <input id="unit" name="unit" type="text" maxlength="100" placeholder="예: 태양계와 별" autocomplete="off" required>
+          </div>
+
+          <fieldset class="field">
+            <legend class="field-label">문제 유형</legend>
+            <div class="type-options">
+              <label class="type-option">
+                <input type="radio" name="type" value="multiple" checked>
+                <span class="type-icon" aria-hidden="true">✅</span>
+                <span><strong>객관식</strong><small>4지선다</small></span>
+              </label>
+              <label class="type-option">
+                <input type="radio" name="type" value="short">
+                <span class="type-icon" aria-hidden="true">✏️</span>
+                <span><strong>주관식</strong><small>예시 정답 제공</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <label class="field-label" for="count">문항 수</label>
+            <div class="count-row">
+              <input id="count" name="count" type="number" min="1" max="25" step="1" value="10" inputmode="numeric" aria-describedby="count-hint count-error">
+              <div class="count-presets" role="group" aria-label="문항 수 빠른 선택">
+                <button class="preset" type="button" data-count="5">5</button>
+                <button class="preset" type="button" data-count="10">10</button>
+                <button class="preset" type="button" data-count="20">20</button>
+                <button class="preset" type="button" data-count="25">25</button>
+              </div>
+            </div>
+            <p class="hint" id="count-hint">1~25개까지 만들 수 있어요. 문항이 많으면 시간이 더 걸려요.</p>
+            <p class="field-error" id="count-error" hidden></p>
+          </div>
+
+          <p class="field-error" id="form-error" role="alert" hidden></p>
+
+          <button class="generate-button" id="generate-button" type="submit">퀴즈 만들기</button>
+        </form>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="result-title">
+        <div class="result-header">
+          <div class="result-title">
+            <h2 id="result-title">생성된 퀴즈</h2>
+            <span class="badge" id="result-badge">대기 중</span>
+          </div>
+          <div class="result-actions">
+            <button class="small-button" id="toggle-answers" type="button" disabled>정답 모두 보기</button>
+            <button class="small-button" id="copy-button" type="button" disabled>텍스트 복사</button>
+            <button class="small-button" id="download-button" type="button" disabled>JSON 저장</button>
+            <button class="small-button" id="print-button" type="button" disabled>인쇄</button>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon" aria-hidden="true">📝</div>
+            <h3>아직 만든 퀴즈가 없어요</h3>
+            <p>왼쪽에서 과목과 단원명을 입력한 뒤 ‘퀴즈 만들기’를 눌러주세요.</p>
+          </div>
+          <div class="skeleton" id="skeleton" hidden aria-hidden="true"><div></div><div></div><div></div></div>
+          <ol class="result-list" id="result-list"></ol>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const API_URL = "/api/generate";
+    const CLIENT_TIMEOUT_MS = 130000;
+    const MARKS = ["①", "②", "③", "④"];
+    const TYPE_LABELS = { multiple: "객관식", short: "주관식" };
+
+    const form = document.getElementById("quiz-form");
+    const subjectInput = document.getElementById("subject");
+    const unitInput = document.getElementById("unit");
+    const countInput = document.getElementById("count");
+    const countError = document.getElementById("count-error");
+    const formError = document.getElementById("form-error");
+    const generateButton = document.getElementById("generate-button");
+    const presets = Array.from(document.querySelectorAll(".preset"));
+    const statusBox = document.getElementById("status");
+    const emptyState = document.getElementById("empty-state");
+    const skeleton = document.getElementById("skeleton");
+    const resultList = document.getElementById("result-list");
+    const resultTitle = document.getElementById("result-title");
+    const resultBadge = document.getElementById("result-badge");
+    const toggleButton = document.getElementById("toggle-answers");
+    const copyButton = document.getElementById("copy-button");
+    const downloadButton = document.getElementById("download-button");
+    const printButton = document.getElementById("print-button");
+
+    let current = null;
+    let answersOpen = false;
+
+    function setStatus(message, kind) {
+      statusBox.textContent = message || "";
+      statusBox.className = "status " + (kind || "info");
+      statusBox.hidden = !message;
+    }
+
+    function syncPresets() {
+      presets.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.count === countInput.value)));
+    }
+
+    function readCount() {
+      const raw = countInput.value.trim();
+      if (!/^\d+$/.test(raw)) return null;
+      const value = Number(raw);
+      return value >= 1 && value <= 25 ? value : null;
+    }
+
+    function showFieldError(input, errorEl, message) {
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      if (errorEl) {
+        errorEl.textContent = message || "";
+        errorEl.hidden = !message;
+      }
+    }
+
+    presets.forEach((button) => {
+      button.addEventListener("click", () => {
+        countInput.value = button.dataset.count;
+        showFieldError(countInput, countError, "");
+        syncPresets();
+      });
+    });
+    countInput.addEventListener("input", () => {
+      showFieldError(countInput, countError, "");
+      syncPresets();
+    });
+    [subjectInput, unitInput].forEach((input) => input.addEventListener("input", () => {
+      showFieldError(input, null, "");
+      formError.hidden = true;
+    }));
+    syncPresets();
+
+    function setLoading(loading) {
+      generateButton.disabled = loading;
+      generateButton.replaceChildren();
+      if (loading) {
+        const spinner = document.createElement("span");
+        spinner.className = "spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        generateButton.append(spinner, "만들고 있어요…");
+      } else {
+        generateButton.textContent = current ? "다시 만들기" : "퀴즈 만들기";
+      }
+      form.setAttribute("aria-busy", String(loading));
+      skeleton.hidden = !loading;
+      if (loading) {
+        emptyState.hidden = true;
+        resultList.replaceChildren();
+      }
+      [toggleButton, copyButton, downloadButton, printButton].forEach((button) => {
+        button.disabled = loading || !current;
+      });
+    }
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function render(quiz) {
+      resultList.replaceChildren();
+      quiz.questions.forEach((item, index) => {
+        const card = el("li", "item-card");
+        const head = el("div", "item-head");
+        head.append(el("span", "item-number", String(index + 1)), el("p", "item-question", item.question));
+        card.append(head);
+
+        const answerBody = el("div", "answer-body");
+        if (quiz.type === "multiple") {
+          const choices = el("ol", "choices");
+          item.choices.forEach((choice, choiceIndex) => {
+            const li = el("li", choiceIndex + 1 === item.answer ? "correct-candidate" : "");
+            li.append(el("span", "choice-mark", MARKS[choiceIndex]), el("span", "", choice));
+            choices.append(li);
+          });
+          card.append(choices);
+          answerBody.append(el("p", "", "정답: " + MARKS[item.answer - 1] + " " + item.choices[item.answer - 1]));
+        } else {
+          answerBody.append(el("p", "", "예시 정답: " + item.answer));
+        }
+        answerBody.append(el("p", "", "해설: " + item.explanation));
+
+        const details = el("details", "answer");
+        details.open = answersOpen;
+        details.addEventListener("toggle", () => highlightAnswer(card, details.open));
+        details.append(el("summary", "", "정답 및 해설"), answerBody);
+        card.append(details);
+        highlightAnswer(card, answersOpen);
+        resultList.append(card);
+      });
+
+      resultTitle.textContent = quiz.subject + " · " + quiz.unit;
+      resultBadge.textContent = TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항";
+      emptyState.hidden = true;
+    }
+
+    function highlightAnswer(card, open) {
+      card.querySelectorAll(".choices li.correct-candidate").forEach((li) => li.classList.toggle("correct", open));
+    }
+
+    function setAnswersOpen(open) {
+      answersOpen = open;
+      resultList.querySelectorAll("details.answer").forEach((details) => { details.open = open; });
+      toggleButton.textContent = open ? "정답 모두 숨기기" : "정답 모두 보기";
+    }
+
+    function toText(quiz) {
+      const lines = ["[" + quiz.subject + "] " + quiz.unit + " - " + TYPE_LABELS[quiz.type] + " " + quiz.questions.length + "문항", ""];
+      quiz.questions.forEach((item, index) => {
+        lines.push((index + 1) + ". " + item.question);
+        if (quiz.type === "multiple") {
+          item.choices.forEach((choice, i) => lines.push("   " + MARKS[i] + " " + choice));
+        }
+        lines.push("");
+      });
+      lines.push("---- 정답 및 해설 ----");
+      quiz.questions.forEach((item, index) => {
+        const answer = quiz.type === "multiple" ? MARKS[item.answer - 1] + " " + item.choices[item.answer - 1] : item.answer;
+        lines.push((index + 1) + ". " + answer + " — " + item.explanation);
+      });
+      return lines.join("\n");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      formError.hidden = true;
+
+      const subject = subjectInput.value.trim();
+      const unit = unitInput.value.trim();
+      const count = readCount();
+      showFieldError(subjectInput, null, subject ? "" : "x");
+      showFieldError(unitInput, null, unit ? "" : "x");
+      showFieldError(countInput, countError, count ? "" : "문항 수는 1~25 사이의 정수로 입력해주세요.");
+
+      if (!subject || !unit) {
+        formError.textContent = "과목과 단원명을 모두 입력해주세요.";
+        formError.hidden = false;
+        (subject ? unitInput : subjectInput).focus();
+        return;
+      }
+      if (!count) {
+        countInput.focus();
+        return;
+      }
+
+      const payload = { subject, unit, type: form.elements.type.value, count };
+      setLoading(true);
+      setStatus(TYPE_LABELS[payload.type] + " " + count + "문항을 만들고 있어요. " + (count > 10 ? "문항이 많아 1분 이상 걸릴 수 있어요." : "잠시만 기다려주세요."), "info");
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error((data && data.error) || "서버 오류가 발생했습니다. (" + response.status + ")");
+        }
+        if (!data || !Array.isArray(data.questions) || data.questions.length !== count) {
+          throw new Error("서버 응답 형식이 올바르지 않습니다.");
+        }
+        current = data;
+        setAnswersOpen(false);
+        render(current);
+        setStatus("", "info");
+      } catch (error) {
+        const message = error.name === "AbortError"
+          ? "응답 시간이 너무 오래 걸려 요청을 중단했어요. 문항 수를 줄여 다시 시도해주세요."
+          : error instanceof TypeError
+            ? "서버에 연결하지 못했어요. 네트워크 상태를 확인해주세요."
+            : error.message;
+        setStatus(message, "error");
+        if (current) render(current); else emptyState.hidden = false;
+      } finally {
+        clearTimeout(timer);
+        setLoading(false);
+      }
+    });
+
+    toggleButton.addEventListener("click", () => setAnswersOpen(!answersOpen));
+
+    copyButton.addEventListener("click", async () => {
+      if (!current) return;
+      try {
+        await navigator.clipboard.writeText(toText(current));
+        setStatus("퀴즈를 텍스트로 복사했어요.", "info");
+      } catch {
+        setStatus("클립보드에 복사하지 못했어요. 브라우저 권한을 확인해주세요.", "error");
+      }
+    });
+
+    downloadButton.addEventListener("click", () => {
+      if (!current) return;
+      const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = ("퀴즈_" + current.subject + "_" + current.unit).replace(/[\\/:*?"<>|\s]+/g, "_") + ".json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    });
+
+    printButton.addEventListener("click", () => window.print());
+  </script>
+</body>
+</html>
