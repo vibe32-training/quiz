@@ -3,7 +3,7 @@
 > 이 문서에는 API 키 등 비밀값을 기록하지 않는다.
 
 **최종 갱신:** 2026-11-21
-**현재 단계:** 3단계 로컬 검증 완료 → 4단계 GitHub 업로드 준비
+**현재 단계:** 4단계 GitHub 업로드 완료 → 5단계 Vercel 배포
 
 ## 프로젝트 구조
 
@@ -39,6 +39,7 @@
 - [x] 서버 API 구현: 입력 재검증, 구조화 출력(JSON Schema) 요청, 응답 개수·형식 검증
 - [x] 프롬프트 갱신: 유형·문항 수 반영, 사용자 입력을 지시문이 아닌 데이터로 취급
 - [x] 로컬 개발 서버 구현 (`public/` 밖의 파일 접근 차단)
+- [x] GitHub 업로드: https://github.com/vibe32-training/quiz (`main`, 원격에 `env_local.txt` 없음 확인)
 
 ## 검증 결과 (로컬)
 
@@ -56,11 +57,9 @@
 
 ## 다음 작업
 
-1. Git 저장소 초기화 후 `git status`로 `env_local.txt`가 추적되지 않는지 확인
-2. GitHub에 푸시
-3. Vercel에서 저장소 연결 (Framework Preset: Other, 빌드 명령 없음)
-4. Vercel 환경 변수에 `AI_ENDPOINT`, `AI_API_KEY`, `AI_DEPLOYMENT` 등록
-5. Preview 배포에서 객관식·주관식·25문항 생성 확인 후 Production 배포
+1. Vercel에서 저장소 연결 (Framework Preset: Other, 빌드 명령 없음)
+2. Vercel 환경 변수에 `AI_ENDPOINT`, `AI_API_KEY`, `AI_DEPLOYMENT` 등록
+3. Preview 배포에서 객관식·주관식·25문항 생성 확인 후 Production 배포
 
 ## 이슈 및 결정 사항
 
